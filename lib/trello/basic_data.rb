@@ -87,13 +87,40 @@ module Trello
 
     def self.many(name, opts = {})
       class_eval do
+        singular_name = name.to_s.singularize
+
         define_method(:"#{name}") do |*args|
           options   = opts.dup
-          resource  = options.delete(:in)  || self.class.to_s.split("::").last.downcase.pluralize
-          klass     = options.delete(:via) || Trello.const_get(name.to_s.singularize.camelize)
+          resource  = options.delete(:in)   || self.class.to_s.split("::").last.downcase.pluralize
+          klass     = options.delete(:via)  || Trello.const_get(name.to_s.singularize.camelize)
           params    = options.merge(args[0] || {})
           resources = client.find_many(klass, "/#{resource}/#{id}/#{name}", params)
           MultiAssociation.new(self, resources).proxy
+        end
+
+        define_method(:"add_#{singular_name}") do |*args|
+          options   = opts.dup
+          resource  = options.delete(:in)  || self.class.to_s.split("::").last.downcase.pluralize
+          params    = args[0] || {}
+
+          resources = client.put("/#{resource}/#{id}/#{name}", params)
+        end
+
+        define_method(:"update_#{singular_name}") do |*args|
+          options   = opts.dup
+          resource  = options.delete(:in) || self.class.to_s.split("::").last.downcase.pluralize
+          params    = args[0] || {}
+          record_id = params.delete(:id)
+
+          resources = client.put("/#{resource}/#{id}/#{name}/#{record_id}", params)
+        end
+
+        define_method(:"delete_#{singular_name}") do |*args|
+          options   = opts.dup
+          resource  = options.delete(:in) || self.class.to_s.split("::").last.downcase.pluralize
+          record_id = args[0]
+
+          resources = client.delete("/#{resource}/#{id}/#{name}/#{record_id}")
         end
       end
     end

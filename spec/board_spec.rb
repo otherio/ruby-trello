@@ -228,6 +228,55 @@ module Trello
       end
     end
 
+    describe 'nested "many" resources' do
+      let(:client) { Trello.client }
+
+      describe '#add_member' do
+        it "puts new members" do
+          board = Board.new 'id' => "board_id"
+
+          client.stub(:get).with("/boards/board_id/members", hash_including(:filter => :all)).
+            and_return JSON.generate([user_details])
+
+          client.should_receive(:put).with("/boards/#{board.id}/members", {
+            :email => 'foo@bar.com',
+            :name => 'Some Guy'
+          })
+
+          board.add_member(:email => 'foo@bar.com', :name => 'Some Guy')
+        end
+      end
+
+      describe '#update_member' do
+        it "puts new members" do
+          board = Board.new 'id' => "board_id"
+
+          client.stub(:get).with("/boards/board_id/members", hash_including(:filter => :all)).
+            and_return JSON.generate([user_details])
+
+          client.should_receive(:put).with("/boards/#{board.id}/members/3", {
+            :email => 'foo@bar.com',
+            :name => 'Some Guy'
+          })
+
+          board.update_member(id: 3, :email => 'foo@bar.com', :name => 'Some Guy')
+        end
+      end
+
+      describe '#delete_member' do
+        it "puts new members" do
+          board = Board.new 'id' => "board_id"
+
+          client.stub(:get).with("/boards/board_id/members", hash_including(:filter => :all)).
+            and_return JSON.generate([user_details])
+
+          client.should_receive(:delete).with("/boards/#{board.id}/members/3")
+
+          board.delete_member(3)
+        end
+      end
+    end
+
     describe "Repository" do
       include Helpers
 
